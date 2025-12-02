@@ -1,7 +1,7 @@
 # MRP Project Protocol
 
 **Student Name:** Muhammet fatih Yildiz
-**Git Repository:** [PASTE YOUR GITHUB LINK HERE]
+**Git Repository:** https://github.com/mfatihy70/MediaRatingsPlatform.git
 
 ## 1. Architecture Decisions
 I chose a **Layered Architecture** to adhere to **SOLID principles** (specifically Separation of Concerns):
@@ -23,7 +23,7 @@ I chose a **Layered Architecture** to adhere to **SOLID principles** (specifical
 
 ## 3. Unit Testing Strategy
 * *Note: Detailed unit tests are planned for the final submission.*
-* Current testing was done using **Postman**.
+* Current testing was integration testing using **Postman**.
 * The logic was designed with dependency injection to allow mocking repositories in the future.
 
 ## 4. Problems & Solutions

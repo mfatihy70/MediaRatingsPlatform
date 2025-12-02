@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MediaRatingsPlatform")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b3043eb044ed9e90df3c8cfc3831ade48820e471")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3fbc0e128b49eba1dc08511f6a1ecb1c60d2e779")]
 [assembly: System.Reflection.AssemblyProductAttribute("MediaRatingsPlatform")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MediaRatingsPlatform")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
