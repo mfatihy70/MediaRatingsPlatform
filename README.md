@@ -1,0 +1,1 @@
+https://github.com/mfatihy70/MediaRatingsPlatform.git
