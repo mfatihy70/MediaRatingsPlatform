@@ -13,7 +13,7 @@ namespace MediaRatingsPlatform
 
             // 1. Setup DB
             // Change these credentials to match your local PostgreSQL setup
-            string connString = "Host=localhost;Username=postgres;Password=admin;Database=";
+            string connString = "Host=localhost;Username=postgres;Password=1234;Database=MediaRatingsPlatform";
             var db = new Database(connString);
 
             try
@@ -29,12 +29,16 @@ namespace MediaRatingsPlatform
             // 2. Setup Dependencies
             var userRepo = new UserRepository(db);
             var mediaRepo = new MediaRepository(db);
+            var ratingRepo = new RatingRepository(db);
+            var favRepo = new FavoritesRepository(db);
 
             var userController = new UserController(userRepo);
             var mediaController = new MediaController(userRepo, mediaRepo);
+            var ratingController = new RatingController(userRepo, ratingRepo, mediaRepo, favRepo);
+            var favoritesController = new FavoritesController(userRepo, favRepo, mediaRepo);
 
             // 3. Setup Router & Server
-            var router = new Router(userController, mediaController);
+            var router = new Router(userController, mediaController, ratingController, favoritesController);
             var server = new HttpServer(new[] { "http://localhost:8080/" }, router);
 
             // 4. Run

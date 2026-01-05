@@ -14,6 +14,83 @@ namespace MediaRatingsPlatform.Data
             _db = db;
         }
 
+        public List<MediaEntry> GetMediaFiltered(string? title = null, string? genre = null, string? mediaType = null,
+            int? releaseYear = null, int? ageRestriction = null, double? minRating = null, string? sortBy = null)
+        {
+            var list = new List<MediaEntry>();
+            using var conn = _db.GetConnection();
+            conn.Open();
+
+            var sql = "SELECT m.* FROM media m";
+            var where = new List<string>();
+            var cmd = new NpgsqlCommand();
+            cmd.Connection = conn;
+
+            if (minRating.HasValue)
+            {
+                // join with ratings to compute average
+                sql = "SELECT m.*, COALESCE(avg_r.avg,0) as avg_score FROM media m LEFT JOIN (SELECT media_id, AVG(stars) as avg FROM ratings GROUP BY media_id) avg_r ON avg_r.media_id = m.id";
+            }
+
+            if (!string.IsNullOrEmpty(title))
+            {
+                where.Add("m.title ILIKE @title");
+                cmd.Parameters.AddWithValue("title", $"%{title}%");
+            }
+
+            if (!string.IsNullOrEmpty(genre))
+            {
+                where.Add("@genre = ANY(m.genres)");
+                cmd.Parameters.AddWithValue("genre", genre);
+            }
+
+            if (!string.IsNullOrEmpty(mediaType))
+            {
+                where.Add("m.media_type = @mediatype");
+                cmd.Parameters.AddWithValue("mediatype", mediaType);
+            }
+
+            if (releaseYear.HasValue)
+            {
+                where.Add("m.release_year = @ry");
+                cmd.Parameters.AddWithValue("ry", releaseYear.Value);
+            }
+
+            if (ageRestriction.HasValue)
+            {
+                where.Add("m.age_restriction <= @ar");
+                cmd.Parameters.AddWithValue("ar", ageRestriction.Value);
+            }
+
+            if (minRating.HasValue)
+            {
+                where.Add("COALESCE(avg_r.avg,0) >= @minrating");
+                cmd.Parameters.AddWithValue("minrating", minRating.Value);
+            }
+
+            if (where.Count > 0)
+            {
+                sql += " WHERE " + string.Join(" AND ", where);
+            }
+
+            // Sorting
+            if (!string.IsNullOrEmpty(sortBy))
+            {
+                if (sortBy == "title") sql += " ORDER BY m.title";
+                else if (sortBy == "year") sql += " ORDER BY m.release_year";
+                else if (sortBy == "score") sql += " ORDER BY avg_score DESC";
+            }
+
+            cmd.CommandText = sql;
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                list.Add(MapReaderToMedia(reader));
+            }
+            return list;
+        }
+
         public void CreateMedia(MediaEntry media)
         {
             using var conn = _db.GetConnection();

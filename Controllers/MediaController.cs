@@ -45,7 +45,19 @@ namespace MediaRatingsPlatform.Controllers
                 return Task.CompletedTask;
             }
 
-            var list = _mediaRepo.GetAllMedia();
+            var query = context.Request.QueryString;
+            string? title = query["title"];
+            string? genre = query["genre"];
+            string? mediaType = query["mediaType"] ?? query["mediatype"];
+            int? releaseYear = null;
+            if (int.TryParse(query["releaseYear"], out int ry)) releaseYear = ry;
+            int? ageRestriction = null;
+            if (int.TryParse(query["ageRestriction"], out int ar)) ageRestriction = ar;
+            double? minRating = null;
+            if (double.TryParse(query["minRating"], out double mr)) minRating = mr;
+            string? sortBy = query["sortBy"];
+
+            var list = _mediaRepo.GetMediaFiltered(title, genre, mediaType, releaseYear, ageRestriction, minRating, sortBy);
             SendResponse(context, 200, list);
             return Task.CompletedTask;
         }

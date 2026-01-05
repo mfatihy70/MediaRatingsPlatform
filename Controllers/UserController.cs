@@ -47,12 +47,39 @@ namespace MediaRatingsPlatform.Controllers
             {
                 string token = $"{user.Username}-mrpToken";
                 _userRepo.UpdateToken(user.Id, token);
-                SendResponse(context, 200, token);
+                SendResponse(context, 200, new { token });
             }
             else
             {
                 SendResponse(context, 401, "Invalid credentials");
             }
+            return Task.CompletedTask;
+        }
+
+        public Task GetProfile(HttpListenerContext context, string username)
+        {
+            var requester = CheckAuth(context);
+            if (requester == null) { SendResponse(context, 401, "Unauthorized"); return Task.CompletedTask; }
+
+            var user = _userRepo.GetUserByUsername(username);
+            if (user == null) { SendResponse(context, 404, "User not found"); return Task.CompletedTask; }
+
+            var stats = _userRepo.GetUserStats(user.Id);
+            var profile = new Models.UserProfile
+            {
+                Username = user.Username,
+                TotalRatings = stats.totalRatings,
+                AverageScore = stats.avgScore,
+                FavoriteGenre = stats.favoriteGenre
+            };
+            SendResponse(context, 200, profile);
+            return Task.CompletedTask;
+        }
+
+        public Task GetLeaderboard(HttpListenerContext context)
+        {
+            var list = _userRepo.GetLeaderboard(10);
+            SendResponse(context, 200, list);
             return Task.CompletedTask;
         }
     }
