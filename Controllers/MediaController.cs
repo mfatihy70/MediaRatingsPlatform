@@ -18,8 +18,9 @@ namespace MediaRatingsPlatform.Controllers
         {
             // 1. Auth Check (Do this ONCE)
             var user = CheckAuth(context);
-            if (user == null) { SendResponse(context, 401, "Unauthorized"); return Task.CompletedTask; }
-
+            if (media == null) { SendResponse(context, 400, "Empty Body"); return Task.CompletedTask; }
+            if (string.IsNullOrWhiteSpace(media.Title)) { SendResponse(context, 400, "Title is required"); return Task.CompletedTask; }
+            if (media.ReleaseYear < 1900 || media.ReleaseYear > 2100) { SendResponse(context, 400, "Invalid Year"); return Task.CompletedTask; }
             // 2. Deserialize
             var media = Deserialize<MediaEntry>(context.Request.InputStream);
 

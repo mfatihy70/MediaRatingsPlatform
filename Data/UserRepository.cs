@@ -91,21 +91,21 @@ namespace MediaRatingsPlatform.Data
             // Replace the hardcoded line with this SQL logic:
 
             var sql = @"
-            SELECT u.username, 
-                   COUNT(r.id) as total_ratings, 
-                   COALESCE(AVG(r.stars), 0) as avg_score,
-                   (
-                       SELECT unnest(m.genres) as g
-                       FROM ratings r2 
-                       JOIN media m ON r2.media_id = m.id
-                       WHERE r2.user_id = u.id
-                       GROUP BY g
-                       ORDER BY COUNT(*) DESC LIMIT 1
-                   ) as fav_genre
-            FROM users u
-            LEFT JOIN ratings r ON u.id = r.user_id
-            WHERE u.username = @u
-            GROUP BY u.id";
+    SELECT u.username, 
+           COUNT(r.id) as total_ratings, 
+           COALESCE(AVG(r.stars), 0) as avg_score,
+           (
+               SELECT unnest(m.genres) as g
+               FROM ratings r2 
+               JOIN media m ON r2.media_id = m.id
+               WHERE r2.user_id = u.id
+               GROUP BY g
+               ORDER BY COUNT(*) DESC LIMIT 1
+           ) as fav_genre
+    FROM users u
+    LEFT JOIN ratings r ON u.id = r.user_id
+    WHERE u.username = @u
+    GROUP BY u.id";
 
             // Map reader.GetString(3) to FavoriteGenre (handle DBNull check)
 

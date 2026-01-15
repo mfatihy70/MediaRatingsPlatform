@@ -1,161 +1,646 @@
 {
-  "info": {
-    "name": "MRP API Collection Intermediate Hand-In",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "1.0.0"
-  },
-  "item": [
-    {
-      "name": "Auth",
-      "item": [
-        {
-          "name": "Register User",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "http://localhost:8080/api/users/register",
-              "host": [
-                "http://localhost:8080"
-              ],
-              "path": [
-                "api",
-                "users",
-                "register"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"user1\",\n  \"password\": \"pass123\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Login User",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "http://localhost:8080/api/users/login",
-              "host": [
-                "http://localhost:8080"
-              ],
-              "path": [
-                "api",
-                "users",
-                "login"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"user1\",\n  \"password\": \"pass123\"\n}"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Media",
-      "item": [
-        {
-          "name": "Create Media Entry",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "http://localhost:8080/api/media",
-              "host": [
-                "http://localhost:8080"
-              ],
-              "path": [
-                "api",
-                "media"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Inception\",\n  \"description\": \"Sci-fi thriller\",\n  \"mediaType\": \"movie\",\n  \"releaseYear\": 2010,\n  \"genres\": [\n    \"sci-fi\",\n    \"thriller\"\n  ],\n  \"ageRestriction\": 12\n}"
-            }
-          }
-        },
-        {
-          "name": "Delete Media Entry",
-          "request": {
-            "method": "DELETE",
-            "url": {
-              "raw": "http://localhost:8080/api/media/1",
-              "host": [
-                "http://localhost:8080"
-              ],
-              "path": [
-                "api",
-                "media",
-                "1"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Update Media Entry",
-          "request": {
-            "method": "PUT",
-            "url": {
-              "raw": "http://localhost:8080/api/media/1",
-              "host": [
-                "http://localhost:8080"
-              ],
-              "path": [
-                "api",
-                "media",
-                "1"
-              ]
-            },
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Inception Updated\",\n  \"description\": \"Updated description\",\n  \"mediaType\": \"movie\",\n  \"releaseYear\": 2010,\n  \"genres\": [\n    \"sci-fi\",\n    \"action\"\n  ],\n  \"ageRestriction\": 16\n}"
-            }
-          }
-        },
-        {
-          "name": "Get Media by ID",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "http://localhost:8080/api/media/1",
-              "host": [
-                "http://localhost:8080"
-              ],
-              "path": [
-                "api",
-                "media",
-                "1"
-              ]
-            },
-            "header": []
-          }
-        }
-      ]
-    }
-  ]
+	"info": {
+		"_postman_id": "ffb03e52-9705-489d-a915-2915ed38ff89",
+		"name": "MRP Full API Collection (COMPLETE + FIXED)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "38189788"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"user1\",\n  \"password\": \"pass123\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/users/register",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"user1\",\n  \"password\": \"pass123\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/users/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/users/1/profile",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users",
+								"1",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Rating History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/users/1/ratings",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users",
+								"1",
+								"ratings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Favorites",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/users/1/favorites",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users",
+								"1",
+								"favorites"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user1@example.com\",\n  \"favoriteGenre\": \"sci-fi\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/users/1/profile",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users",
+								"1",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Media",
+			"item": [
+				{
+					"name": "Create Media Entry",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Inception\",\n  \"description\": \"Sci-fi thriller\",\n  \"mediaType\": \"movie\",\n  \"releaseYear\": 2010,\n  \"genres\": [\n    \"sci-fi\",\n    \"thriller\"\n  ],\n  \"ageRestriction\": 12\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/media",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"media"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search & Filter Media",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/media?title=incep&genre=sci-fi&sortBy=score",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"media"
+							],
+							"query": [
+								{
+									"key": "title",
+									"value": "incep"
+								},
+								{
+									"key": "genre",
+									"value": "sci-fi"
+								},
+								{
+									"key": "sortBy",
+									"value": "score"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Media Entry",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Inception Updated\",\n  \"description\": \"Updated description\",\n  \"mediaType\": \"movie\",\n  \"releaseYear\": 2010,\n  \"genres\": [\n    \"sci-fi\",\n    \"action\"\n  ],\n  \"ageRestriction\": 16\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/media/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"media",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Media by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/media/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"media",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Full Search & Filter",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/media?title=inception&genre=sci-fi&mediaType=movie&releaseYear=2010&ageRestriction=12&rating=4&sortBy=title",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"media"
+							],
+							"query": [
+								{
+									"key": "title",
+									"value": "inception"
+								},
+								{
+									"key": "genre",
+									"value": "sci-fi"
+								},
+								{
+									"key": "mediaType",
+									"value": "movie"
+								},
+								{
+									"key": "releaseYear",
+									"value": "2010"
+								},
+								{
+									"key": "ageRestriction",
+									"value": "12"
+								},
+								{
+									"key": "rating",
+									"value": "4"
+								},
+								{
+									"key": "sortBy",
+									"value": "title"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Rating",
+			"item": [
+				{
+					"name": "Rate Media",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"stars\": 5,\n  \"comment\": \"Amazing movie!\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/media/1/rate",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"media",
+								"1",
+								"rate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Like Rating",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/ratings/1/like",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"ratings",
+								"1",
+								"like"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Rating",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"stars\": 4,\n  \"comment\": \"Updated comment\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/ratings/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"ratings",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Confirm Rating Comment",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/ratings/1/confirm",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"ratings",
+								"1",
+								"confirm"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Favorites",
+			"item": [
+				{
+					"name": "Unmark as Favorite",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/media/1/favorite",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"media",
+								"1",
+								"favorite"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark as Favorite",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/media/1/favorite",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"media",
+								"1",
+								"favorite"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Recommendation",
+			"item": [
+				{
+					"name": "Get Recommendations by Genre",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/users/1/recommendations?type=genre",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users",
+								"1",
+								"recommendations"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "genre"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Recommendations by Content",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/users/1/recommendations?type=content",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users",
+								"1",
+								"recommendations"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "content"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Leaderboard",
+			"item": [
+				{
+					"name": "Get Leaderboard",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/leaderboard",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"leaderboard"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Media Entry",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/media/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"media",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "user1-mrpToken",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
 }

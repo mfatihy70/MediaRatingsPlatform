@@ -141,88 +141,65 @@ namespace MediaRatingsPlatform.Data
         }
 
         // RECOMMENDATION LOGIC
+        // Inside MediaRepository.cs
+
         public List<MediaEntry> GetRecommendations(int userId, string type)
         {
             using var conn = _db.GetConnection();
             conn.Open();
 
-            if (type == "genre")
+            if (type == "content")
             {
-                // 1. Get user's preferred genre (from Profile OR calculation)
-                // Let's use calculation from high rated movies
-                string genreSql = @"
-                    SELECT unnest(m.genres) as g, COUNT(*) as c
-                    FROM ratings r
-                    JOIN media m ON r.media_id = m.id
-                    WHERE r.user_id = @uid AND r.stars >= 4
-                    GROUP BY g
-                    ORDER BY c DESC LIMIT 1";
-
-                string favGenre = "";
-                using (var cmd = new NpgsqlCommand(genreSql, conn))
-                {
-                    cmd.Parameters.AddWithValue("uid", userId);
-                    var res = cmd.ExecuteScalar();
-                    if (res != null) favGenre = res.ToString() ?? "";
-                }
-
-                if (string.IsNullOrEmpty(favGenre)) return new List<MediaEntry>();
-
-                // Recommend unrated movies with this genre
-                string recSql = @"
-                    SELECT m.*, COALESCE(AVG(r.stars), 0) as avg_score, COUNT(r.id) as count_ratings
-                    FROM media m
-                    LEFT JOIN ratings r ON m.id = r.media_id
-                    WHERE @g = ANY(m.genres)
-                    AND m.id NOT IN (SELECT media_id FROM ratings WHERE user_id = @uid)
-                    GROUP BY m.id
-                    ORDER BY avg_score DESC LIMIT 5";
-
-                // Execute and map (omitted for brevity, same as existing GetMediaFiltered logic)
-                // ...
-                return ExecuteMediaListQuery(conn, recSql, new[] {
-            new NpgsqlParameter("g", favGenre),
-            new NpgsqlParameter("uid", userId)
-        });
-            }
-            else if (type == "content")
-            {
-                // Content similarity: Recommend same MediaType and AgeRestriction as user's favorites
-                // Simplified: Find most watched MediaType
-                string typeSql = @"
-                    SELECT m.media_type, COUNT(*) as c
-                    FROM ratings r
-                    JOIN media m ON r.media_id = m.id
-                    WHERE r.user_id = @uid
-                    GROUP BY m.media_type
-                    ORDER BY c DESC LIMIT 1";
+                // 1. Find the "Profile" of content the user likes (Rating >= 4)
+                // We look for the most frequent combination of Type + Age + Genre
+                var prefSql = @"
+            SELECT m.media_type, m.age_restriction, unnest(m.genres) as g, COUNT(*) as c
+            FROM ratings r
+            JOIN media m ON r.media_id = m.id
+            WHERE r.user_id = @uid AND r.stars >= 4
+            GROUP BY m.media_type, m.age_restriction, g
+            ORDER BY c DESC LIMIT 1";
 
                 string favType = "";
-                using (var cmd = new NpgsqlCommand(typeSql, conn))
+                int favAge = 0;
+                string favGenre = "";
+
+                using (var cmd = new NpgsqlCommand(prefSql, conn))
                 {
                     cmd.Parameters.AddWithValue("uid", userId);
-                    var res = cmd.ExecuteScalar();
-                    if (res != null) favType = res.ToString() ?? "";
+                    using var reader = cmd.ExecuteReader();
+                    if (reader.Read())
+                    {
+                        favType = reader.GetString(0);
+                        favAge = reader.GetInt32(1);
+                        favGenre = reader.GetString(2);
+                    }
+                    else return new List<MediaEntry>(); // No history to base recs on
                 }
 
-                string recSql = @"
-                    SELECT m.*, COALESCE(AVG(r.stars), 0) as avg_score, COUNT(r.id) as count_ratings
-                    FROM media m
-                    LEFT JOIN ratings r ON m.id = r.media_id
-                    WHERE m.media_type = @mt
-                    AND m.id NOT IN (SELECT media_id FROM ratings WHERE user_id = @uid)
-                    GROUP BY m.id
-                    ORDER BY avg_score DESC LIMIT 5";
+                // 2. Find similar content the user has NOT rated
+                // Strict match on Type and Age, Overlap on Genre
+                var recSql = @"
+            SELECT m.*, COALESCE(AVG(r.stars), 0) as avg_score, COUNT(r.id) as count_ratings
+            FROM media m
+            LEFT JOIN ratings r ON m.id = r.media_id
+            WHERE m.media_type = @mt 
+            AND m.age_restriction = @age
+            AND @gen = ANY(m.genres)
+            AND m.id NOT IN (SELECT media_id FROM ratings WHERE user_id = @uid)
+            GROUP BY m.id
+            ORDER BY avg_score DESC LIMIT 5";
 
                 return ExecuteMediaListQuery(conn, recSql, new[] {
             new NpgsqlParameter("mt", favType),
+            new NpgsqlParameter("age", favAge),
+            new NpgsqlParameter("gen", favGenre),
             new NpgsqlParameter("uid", userId)
         });
             }
-
+            // Keep existing "genre" logic here...
             return new List<MediaEntry>();
         }
-
         // Helper to avoid repeated code
         private List<MediaEntry> ExecuteMediaListQuery(NpgsqlConnection conn, string sql, NpgsqlParameter[] parameters)
         {

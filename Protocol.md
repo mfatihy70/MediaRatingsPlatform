@@ -1,43 +1,72 @@
-# MRP Project Protocol
+# Media Ratings Platform (MRP) - Development Protocol
 
-**Student Name:** Muhammet fatih Yildiz
-**Git Repository:** https://github.com/mfatihy70/MediaRatingsPlatform.git
+## Technical Steps and Architecture Decisions
+The application is built as a standalone RESTful HTTP server using C#. The following architectural decisions were made to ensure scalability and maintainability:
 
-## 1. Architecture Decisions
-I chose a **Layered Architecture** to adhere to **SOLID principles** (specifically Separation of Concerns):
+### 1. Layered Architecture (Controller-Repository Pattern)
+The project follows a separation of concerns by dividing logic into three distinct layers:
+* **Controllers**: Handle incoming `HttpListenerContext` requests, manage authentication checks, and send JSON responses.
+* **Repositories**: Contain all PostgreSQL-specific logic and SQL queries. This abstracts the data access away from the HTTP logic.
+* **Models**: Simple Data Transfer Objects (DTOs) representing entities like `User`, `MediaEntry`, and `Rating`.
 
-* **Models:** Plain C# objects (POCOs) representing the database tables.
-* **Data Layer (Repositories):** Handles all SQL logic. This separates database specifics from the HTTP logic.
-* **Controllers:** Handles HTTP requests, deserialization, and authentication checks. They do not contain SQL.
-* **HttpServer & Router:** A custom implementation using `HttpListener` to avoid using ASP.NET/Spring (as per requirements).
+### 2. HTTP Protocol Stack
+As per the requirements, no high-level frameworks like ASP.NET were used. Instead:
+* **HttpListener**: Used to implement the low-level HTTP server.
+* **Regex Routing**: A custom `Router` class uses Regular Expressions to map URL paths (including dynamic IDs) to specific controller actions.
+* **Newtonsoft.Json**: Employed for object serialization and deserialization.
 
-**Design Pattern Used:**
-* **Repository Pattern:** To abstract the data access.
-* **Dependency Injection (Manual):** The `Program.cs` injects the `Database` into Repositories, and Repositories into Controllers.
+### 3. Data Persistence
+Data is persisted in a **PostgreSQL** database. To maintain referential integrity, we utilized foreign keys with `ON DELETE CASCADE` actions for ratings and favorites.
 
-## 2. Technical Steps
-1.  **Database:** Set up PostgreSQL with tables for `users` and `media`.
-2.  **Server:** Implemented an async loop using `HttpListener`.
-3.  **Routing:** Built a custom string-matching router to handle `GET`, `POST`, `PUT`, `DELETE`.
-4.  **Auth:** Implemented a simple Token-based auth (Bearer Token) stored in the database.
+---
 
-## 3. Unit Testing Strategy
-* *Note: Detailed unit tests are planned for the final submission.*
-* Current testing was integration testing using **Postman**.
-* The logic was designed with dependency injection to allow mocking repositories in the future.
+## Unit Test Coverage and Logic Validation
+A suite of 20 integration/unit tests was implemented to validate core business logic.
 
-## 4. Problems & Solutions
-* **Problem:** JSON Case Sensitivity. The Spec requires camelCase (`username`), but C# uses PascalCase (`Username`).
-    * **Solution:** Used Newtonsoft.Json settings or accepted that standard deserialization handles case-insensitivity reading.
-* **Problem:** Handling synchronous PostgreSQL calls in an async HTTP server.
-    * **Solution:** Returned `Task.CompletedTask` in controllers to satisfy the async interface while keeping DB calls simple for now.
+### Why Specific Logic Was Tested
+* **Authentication**: Tests verify that passwords are never stored in plain text but as **BCrypt** hashes, and that tokens accurately identify users.
+* **Database Constraints**: Tests ensure that the "one rating per user per media" rule is enforced at the database level.
+* **Calculation Logic**: Verified that the average score and rating count for media entries are calculated correctly during SQL joins.
+* **Recommendation Engine**: Specific tests ensure that content similarity (matching genre, type, and age restriction) returns expected results.
+* **Security**: Search filters were tested against SQL injection attempts to ensure parameterization is working correctly.
 
-## 5. Time Tracking
-* Database Setup: 1h
-* HTTP Server Skeleton: 2h
-* User/Auth Implementation: 2h
-* Media CRUD Implementation: 2h
-* Refactoring & Testing: 1h
-* **Total:** ~8 hours
+---
 
-**Note:** The git history will probably be only a few commits due to time constraints.
+## Problems Encountered and Solutions
+
+### 1. Complexity of REST Routing
+* **Problem**: Implementing RESTful paths like `/api/media/{id}/rate` without a framework proved difficult for standard string splitting.
+* **Solution**: Implemented a **Regex-based router** that identifies segments and extracts integer IDs from the URL path reliably.
+
+### 2. Moderation Visibility
+* **Problem**: Ensuring comments are not public until confirmed while still allowing the author to see their "draft" rating.
+* **Solution**: Added an `is_confirmed` boolean to the `ratings` table. The `GetRatingsForMedia` query explicitly filters for `is_confirmed = true`.
+
+### 3. Password Security
+* **Problem**: Storing plain text passwords is a security risk.
+* **Solution**: Integrated the **BCrypt.Net** library to handle high-entropy hashing and verification during login.
+
+---
+
+## Estimated Time Tracking
+
+| Major Task | Estimated Hours |
+| :--- | :--- |
+| Initial Setup & `HttpListener` Server | 4 Hours |
+| Database Schema Design & PostgreSQL Setup | 3 Hours |
+| User Auth & Token Management Logic | 5 Hours |
+| Media Management (CRUD) & Search Filters | 6 Hours |
+| Rating System & Moderation Logic | 6 Hours |
+| Recommendation Engine (SQL Aggregates) | 5 Hours |
+| Integration Testing & Postman Collection | 6 Hours |
+| **Total** | **35 Hours** |
+
+---
+
+## Architecture Design
+The architecture follows a clean separation of concerns, ensuring that the HTTP layer (Controllers) is decoupled from the Data Access layer (Repositories).
+
+
+
+## GitHub Repository
+* [Link to GitHub Repository](https://github.com/mfatihy70/MediaRatingsPlatform.git)
