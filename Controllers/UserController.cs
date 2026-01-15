@@ -58,29 +58,60 @@ namespace MediaRatingsPlatform.Controllers
 
         public Task GetProfile(HttpListenerContext context, string username)
         {
-            var requester = CheckAuth(context);
-            if (requester == null) { SendResponse(context, 401, "Unauthorized"); return Task.CompletedTask; }
-
-            var user = _userRepo.GetUserByUsername(username);
-            if (user == null) { SendResponse(context, 404, "User not found"); return Task.CompletedTask; }
-
-            var stats = _userRepo.GetUserStats(user.Id);
-            var profile = new Models.UserProfile
-            {
-                Username = user.Username,
-                TotalRatings = stats.totalRatings,
-                AverageScore = stats.avgScore,
-                FavoriteGenre = stats.favoriteGenre
-            };
+            // Auth check optional for viewing public profiles, but enforced by Router usually
+            var profile = _userRepo.GetUserProfile(username);
             SendResponse(context, 200, profile);
             return Task.CompletedTask;
         }
 
         public Task GetLeaderboard(HttpListenerContext context)
         {
-            var list = _userRepo.GetLeaderboard(10);
-            SendResponse(context, 200, list);
+            var board = _userRepo.GetLeaderboard();
+            SendResponse(context, 200, board);
             return Task.CompletedTask;
+        }
+
+        // Add/Update these methods in UserController
+        public Task GetProfileById(HttpListenerContext context, int id)
+        {
+            var profile = _userRepo.GetUserProfileById(id);
+            if (profile == null) SendResponse(context, 404, "User not found");
+            else SendResponse(context, 200, profile);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateProfile(HttpListenerContext context, int id)
+        {
+            var user = CheckAuth(context);
+            if (user == null || user.Id != id) { SendResponse(context, 401); return Task.CompletedTask; }
+
+            var data = Deserialize<UserProfileUpdateDto>(context.Request.InputStream);
+
+            // FIX 1: Explicit null check for 'data'
+            if (data == null)
+            {
+                SendResponse(context, 400, "Invalid Data");
+                return Task.CompletedTask;
+            }
+
+            _userRepo.UpdateUserProfile(id, data.Email, data.FavoriteGenre);
+            SendResponse(context, 200, "Profile updated");
+            return Task.CompletedTask;
+        }
+
+        public Task GetUserRatingHistory(HttpListenerContext context, int id)
+        {
+            // Usually public info, but can restrict if needed.
+            var history = _userRepo.GetUserRatingHistory(id);
+            SendResponse(context, 200, history);
+            return Task.CompletedTask;
+        }
+
+        // Helper Class (Put in User.cs or similar)
+        public class UserProfileUpdateDto
+        {
+            public string Email { get; set; } = string.Empty;
+            public string FavoriteGenre { get; set; } = string.Empty;
         }
     }
 }

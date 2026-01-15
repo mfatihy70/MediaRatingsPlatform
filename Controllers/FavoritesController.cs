@@ -1,45 +1,58 @@
-        private readonly FavoritesRepository _favRepo;
-        private readonly MediaRepository _mediaRepo;
+using MediaRatingsPlatform.Data;
+using System.Net;
+using System.Threading.Tasks;
 
-        public FavoritesController(UserRepository userRepo, FavoritesRepository favRepo, MediaRepository mediaRepo) : base(userRepo)
+namespace MediaRatingsPlatform.Controllers
+{
+    public class FavoritesController : BaseController
+    {
+        private readonly FavoritesRepository _favRepo;
+
+        public FavoritesController(UserRepository userRepo, FavoritesRepository favRepo) : base(userRepo)
         {
             _favRepo = favRepo;
-            _mediaRepo = mediaRepo;
         }
 
         public Task AddFavorite(HttpListenerContext context, int mediaId)
         {
             var user = CheckAuth(context);
-            if (user == null) { SendResponse(context, 401, "Unauthorized"); return Task.CompletedTask; }
+            if (user == null) { SendResponse(context, 401); return Task.CompletedTask; }
 
-            var media = _mediaRepo.GetMediaById(mediaId);
-            if (media == null) { SendResponse(context, 404, "Media not found"); return Task.CompletedTask; }
-
-            _favRepo.AddFavorite(user.Id, mediaId);
-            SendResponse(context, 200, "Added to favorites");
+            try
+            {
+                _favRepo.AddFavorite(user.Id, mediaId);
+                SendResponse(context, 200, "Added to favorites");
+            }
+            catch (Npgsql.PostgresException ex) when (ex.SqlState == "23503")
+            {
+                // SqlState 23503 = Foreign Key Violation (Media ID doesn't exist)
+                SendResponse(context, 404, "Media ID not found");
+            }
+            catch (Exception ex)
+            {
+                SendResponse(context, 500, ex.Message);
+            }
             return Task.CompletedTask;
         }
 
         public Task RemoveFavorite(HttpListenerContext context, int mediaId)
         {
             var user = CheckAuth(context);
-            if (user == null) { SendResponse(context, 401, "Unauthorized"); return Task.CompletedTask; }
-
-            var media = _mediaRepo.GetMediaById(mediaId);
-            if (media == null) { SendResponse(context, 404, "Media not found"); return Task.CompletedTask; }
+            if (user == null) { SendResponse(context, 401); return Task.CompletedTask; }
 
             _favRepo.RemoveFavorite(user.Id, mediaId);
             SendResponse(context, 200, "Removed from favorites");
             return Task.CompletedTask;
         }
 
-        public Task GetUserFavorites(HttpListenerContext context)
+        public Task GetUserFavorites(HttpListenerContext context, int userId)
         {
             var user = CheckAuth(context);
-            if (user == null) { SendResponse(context, 401, "Unauthorized"); return Task.CompletedTask; }
+            // Security: only show my favorites
+            if (user == null || user.Id != userId) { SendResponse(context, 401); return Task.CompletedTask; }
 
-            var favoriteIds = _favRepo.GetUserFavorites(user.Id);
-            SendResponse(context, 200, favoriteIds);
+            var list = _favRepo.GetFavorites(userId);
+            SendResponse(context, 200, list);
             return Task.CompletedTask;
         }
     }

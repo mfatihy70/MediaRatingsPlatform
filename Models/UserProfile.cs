@@ -1,10 +1,8 @@
-namespace MediaRatingsPlatform.Models
+public class UserProfile
 {
-    public class UserProfile
-    {
-        public string Username { get; set; } = string.Empty;
-        public int TotalRatings { get; set; }
-        public double AverageScore { get; set; }
-        public string? FavoriteGenre { get; set; }
-    }
+    public string Username { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty; // Added
+    public int TotalRatings { get; set; }
+    public double AverageScoreGiven { get; set; }
+    public string FavoriteGenre { get; set; } = "";
 }

@@ -1,178 +1,131 @@
 using MediaRatingsPlatform.Models;
 using Npgsql;
-using System;
 using System.Collections.Generic;
 
-namespace MediaRatingsPlatform.Data
-{
-    public class RatingRepository
-    {
+namespace MediaRatingsPlatform.Data {
+    public class RatingRepository {
         private readonly Database _db;
 
-        public RatingRepository(Database db)
-        {
+        public RatingRepository(Database db) {
             _db = db;
         }
 
-        public void CreateRating(Rating rating)
-        {
+        public void CreateRating(Rating rating) {
             using var conn = _db.GetConnection();
             conn.Open();
+            // is_confirmed defaults to false in DB
             using var cmd = new NpgsqlCommand(@"
-                INSERT INTO ratings (stars, comment, comment_confirmed, user_id, media_id)
-                VALUES (@stars, @comment, @comment_confirmed, @user_id, @media_id)", conn);
-
-            cmd.Parameters.AddWithValue("stars", rating.Stars);
-            cmd.Parameters.AddWithValue("comment", rating.Comment ?? "");
-            cmd.Parameters.AddWithValue("comment_confirmed", rating.IsConfirmed);
-            cmd.Parameters.AddWithValue("user_id", rating.UserId);
-            cmd.Parameters.AddWithValue("media_id", rating.MediaId);
+                INSERT INTO ratings (media_id, user_id, stars, comment, is_confirmed)
+                VALUES (@mid, @uid, @s, @c, false)", conn);
+            cmd.Parameters.AddWithValue("mid", rating.MediaId);
+            cmd.Parameters.AddWithValue("uid", rating.UserId);
+            cmd.Parameters.AddWithValue("s", rating.Stars);
+            cmd.Parameters.AddWithValue("c", rating.Comment ?? "");
             cmd.ExecuteNonQuery();
         }
 
-        public Rating? GetRatingById(int id)
-        {
-            using var conn = _db.GetConnection();
-            conn.Open();
-            using var cmd = new NpgsqlCommand("SELECT id, stars, comment, comment_confirmed, user_id, media_id, created_at FROM ratings WHERE id = @id", conn);
-            cmd.Parameters.AddWithValue("id", id);
-            using var reader = cmd.ExecuteReader();
-            if (reader.Read()) return MapReaderToRating(reader);
-            return null;
-        }
-
-        public List<Rating> GetRatingsByMediaId(int mediaId)
-        {
-            var list = new List<Rating>();
-            using var conn = _db.GetConnection();
-            conn.Open();
-            using var cmd = new NpgsqlCommand("SELECT id, stars, comment, comment_confirmed, user_id, media_id, created_at FROM ratings WHERE media_id = @media_id ORDER BY created_at DESC", conn);
-            cmd.Parameters.AddWithValue("media_id", mediaId);
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read()) list.Add(MapReaderToRating(reader));
-            return list;
-        }
-
-        public List<Rating> GetRatingsByUserId(int userId)
-        {
-            var list = new List<Rating>();
-            using var conn = _db.GetConnection();
-            conn.Open();
-            using var cmd = new NpgsqlCommand("SELECT id, stars, comment, comment_confirmed, user_id, media_id, created_at FROM ratings WHERE user_id = @user_id ORDER BY created_at DESC", conn);
-            cmd.Parameters.AddWithValue("user_id", userId);
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read()) list.Add(MapReaderToRating(reader));
-            return list;
-        }
-
-        public Rating? GetUserRatingForMedia(int userId, int mediaId)
-        {
-            using var conn = _db.GetConnection();
-            conn.Open();
-            using var cmd = new NpgsqlCommand("SELECT id, stars, comment, comment_confirmed, user_id, media_id, created_at FROM ratings WHERE user_id = @user_id AND media_id = @media_id", conn);
-            cmd.Parameters.AddWithValue("user_id", userId);
-            cmd.Parameters.AddWithValue("media_id", mediaId);
-            using var reader = cmd.ExecuteReader();
-            if (reader.Read()) return MapReaderToRating(reader);
-            return null;
-        }
-
-        public void UpdateRating(Rating rating)
-        {
+        public void UpdateRating(int ratingId, int stars, string comment) {
             using var conn = _db.GetConnection();
             conn.Open();
             using var cmd = new NpgsqlCommand(@"
-                UPDATE ratings SET stars=@stars, comment=@comment, comment_confirmed=@comment_confirmed WHERE id=@id", conn);
-            cmd.Parameters.AddWithValue("stars", rating.Stars);
-            cmd.Parameters.AddWithValue("comment", rating.Comment ?? "");
-            cmd.Parameters.AddWithValue("comment_confirmed", rating.IsConfirmed);
-            cmd.Parameters.AddWithValue("id", rating.Id);
-            cmd.ExecuteNonQuery();
-        }
-
-        public void DeleteRating(int ratingId)
-        {
-            using var conn = _db.GetConnection();
-            conn.Open();
-            using var cmd = new NpgsqlCommand("DELETE FROM ratings WHERE id = @id", conn);
+                UPDATE ratings SET stars=@s, comment=@c, is_confirmed=false 
+                WHERE id=@id", conn);
+            // Note: Editing a rating resets confirmation (moderation logic)
+            cmd.Parameters.AddWithValue("s", stars);
+            cmd.Parameters.AddWithValue("c", comment);
             cmd.Parameters.AddWithValue("id", ratingId);
             cmd.ExecuteNonQuery();
         }
 
-        public void LikeRating(int userId, int ratingId)
-        {
+        // The "Moderation" confirmation
+        public void ConfirmRating(int ratingId, int userId) {
             using var conn = _db.GetConnection();
             conn.Open();
-            using var cmd = new NpgsqlCommand("INSERT INTO rating_likes (user_id, rating_id) VALUES (@user_id, @rating_id)", conn);
-            cmd.Parameters.AddWithValue("user_id", userId);
-            cmd.Parameters.AddWithValue("rating_id", ratingId);
-            try { cmd.ExecuteNonQuery(); } catch (PostgresException ex) when (ex.SqlState == "23505") { /* already liked */ }
-        }
-
-        public void UnlikeRating(int userId, int ratingId)
-        {
-            using var conn = _db.GetConnection();
-            conn.Open();
-            using var cmd = new NpgsqlCommand("DELETE FROM rating_likes WHERE user_id = @user_id AND rating_id = @rating_id", conn);
-            cmd.Parameters.AddWithValue("user_id", userId);
-            cmd.Parameters.AddWithValue("rating_id", ratingId);
+            using var cmd = new NpgsqlCommand("UPDATE ratings SET is_confirmed=true WHERE id=@id AND user_id=@uid", conn);
+            cmd.Parameters.AddWithValue("id", ratingId);
+            cmd.Parameters.AddWithValue("uid", userId);
             cmd.ExecuteNonQuery();
         }
 
-        public int GetLikeCount(int ratingId)
-        {
+        public void DeleteRating(int id) {
             using var conn = _db.GetConnection();
             conn.Open();
-            using var cmd = new NpgsqlCommand("SELECT COUNT(*) FROM rating_likes WHERE rating_id = @rating_id", conn);
-            cmd.Parameters.AddWithValue("rating_id", ratingId);
-            var result = cmd.ExecuteScalar();
-            return result != null ? Convert.ToInt32(result) : 0;
+            using var cmd = new NpgsqlCommand("DELETE FROM ratings WHERE id = @id", conn);
+            cmd.Parameters.AddWithValue("id", id);
+            cmd.ExecuteNonQuery();
         }
 
-        public bool HasUserLikedRating(int userId, int ratingId)
-        {
+        public Rating? GetRatingById(int id) {
             using var conn = _db.GetConnection();
             conn.Open();
-            using var cmd = new NpgsqlCommand("SELECT COUNT(*) FROM rating_likes WHERE user_id = @user_id AND rating_id = @rating_id", conn);
-            cmd.Parameters.AddWithValue("user_id", userId);
-            cmd.Parameters.AddWithValue("rating_id", ratingId);
-            var result = cmd.ExecuteScalar();
-            return result != null && Convert.ToInt32(result) > 0;
+            using var cmd = new NpgsqlCommand("SELECT * FROM ratings WHERE id = @id", conn);
+            cmd.Parameters.AddWithValue("id", id);
+            using var reader = cmd.ExecuteReader();
+            if (reader.Read()) {
+                return new Rating {
+                    Id = reader.GetInt32(0),
+                    MediaId = reader.GetInt32(1),
+                    UserId = reader.GetInt32(2),
+                    Stars = reader.GetInt32(3),
+                    Comment = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                    IsConfirmed = reader.GetBoolean(6)
+                };
+            }
+            return null;
         }
 
-        public double GetAverageRatingForMedia(int mediaId)
-        {
+        public List<Rating> GetRatingsForMedia(int mediaId) {
+            var list = new List<Rating>();
             using var conn = _db.GetConnection();
             conn.Open();
-            using var cmd = new NpgsqlCommand("SELECT AVG(stars) FROM ratings WHERE media_id = @media_id", conn);
-            cmd.Parameters.AddWithValue("media_id", mediaId);
-            var result = cmd.ExecuteScalar();
-            return result != null && result != DBNull.Value ? Convert.ToDouble(result) : 0.0;
+            // Get ratings, join user for username, count likes
+            // Only return CONFIRMED ratings (except maybe for the user themselves, but simpler to filter confirmed)
+            var sql = @"
+                SELECT r.id, r.media_id, r.user_id, r.stars, r.comment, r.timestamp, u.username,
+                       (SELECT COUNT(*) FROM rating_likes rl WHERE rl.rating_id = r.id) as like_count
+                FROM ratings r
+                JOIN users u ON r.user_id = u.id
+                WHERE r.media_id = @mid AND r.is_confirmed = true
+                ORDER BY r.timestamp DESC";
+
+            using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("mid", mediaId);
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read()) {
+                list.Add(new Rating {
+                    Id = reader.GetInt32(0),
+                    MediaId = reader.GetInt32(1),
+                    UserId = reader.GetInt32(2),
+                    Stars = reader.GetInt32(3),
+                    Comment = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                    Timestamp = reader.GetDateTime(5),
+                    IsConfirmed = true,
+                    Username = reader.GetString(6),
+                    LikeCount = reader.GetInt32(7)
+                });
+            }
+            return list;
         }
 
-        public bool UserHasRated(int userId, int mediaId)
-        {
+        public void AddLike(int ratingId, int userId) {
             using var conn = _db.GetConnection();
             conn.Open();
-            using var cmd = new NpgsqlCommand("SELECT COUNT(*) FROM ratings WHERE user_id=@u AND media_id=@m", conn);
-            cmd.Parameters.AddWithValue("u", userId);
-            cmd.Parameters.AddWithValue("m", mediaId);
-            var res = cmd.ExecuteScalar();
-            return res != null && Convert.ToInt32(res) > 0;
+            // Insert ignore conflict (if already liked)
+            using var cmd = new NpgsqlCommand(@"
+                INSERT INTO rating_likes (rating_id, user_id) VALUES (@rid, @uid) 
+                ON CONFLICT DO NOTHING", conn);
+            cmd.Parameters.AddWithValue("rid", ratingId);
+            cmd.Parameters.AddWithValue("uid", userId);
+            cmd.ExecuteNonQuery();
         }
 
-        private Rating MapReaderToRating(NpgsqlDataReader reader)
-        {
-            return new Rating
-            {
-                Id = reader.GetInt32(0),
-                Stars = reader.GetInt32(1),
-                Comment = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
-                IsConfirmed = reader.GetBoolean(3),
-                UserId = reader.GetInt32(4),
-                MediaId = reader.GetInt32(5),
-                CreatedAt = reader.GetDateTime(6)
-            };
+        public void RemoveLike(int ratingId, int userId) {
+            using var conn = _db.GetConnection();
+            conn.Open();
+            using var cmd = new NpgsqlCommand("DELETE FROM rating_likes WHERE rating_id=@rid AND user_id=@uid", conn);
+            cmd.Parameters.AddWithValue("rid", ratingId);
+            cmd.Parameters.AddWithValue("uid", userId);
+            cmd.ExecuteNonQuery();
         }
     }
 }

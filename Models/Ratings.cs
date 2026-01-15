@@ -5,10 +5,13 @@ namespace MediaRatingsPlatform.Models
     public class Rating
     {
         public int Id { get; set; }
-        public int Stars { get; set; } // 1-5
+        public int MediaId { get; set; }
+        public int UserId { get; set; }
+        public string Username { get; set; } = string.Empty; // Useful for display
+        public int Stars { get; set; }
         public string Comment { get; set; } = string.Empty;
-        public int UserId { get; set; }    // The user who rated
-        public int MediaId { get; set; }   // The media being rated
-        public bool IsConfirmed { get; set; } = false; // Moderation feature mentioned in spec
+        public DateTime Timestamp { get; set; }
+        public bool IsConfirmed { get; set; }
+        public int LikeCount { get; set; } // Calculated
     }
 }

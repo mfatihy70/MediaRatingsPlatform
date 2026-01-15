@@ -18,3 +18,5 @@ C:\Users\mfati\OneDrive - FH Technikum Wien\3. Semester\SWEN\MediaRatingsPlatfor
 C:\Users\mfati\OneDrive - FH Technikum Wien\3. Semester\SWEN\MediaRatingsPlatform\obj\Debug\net9.0\MediaRatingsPlatform.pdb
 C:\Users\mfati\OneDrive - FH Technikum Wien\3. Semester\SWEN\MediaRatingsPlatform\obj\Debug\net9.0\MediaRatingsPlatform.genruntimeconfig.cache
 C:\Users\mfati\OneDrive - FH Technikum Wien\3. Semester\SWEN\MediaRatingsPlatform\obj\Debug\net9.0\ref\MediaRatingsPlatform.dll
+C:\Users\mfati\OneDrive - FH Technikum Wien\3. Semester\SWEN\MediaRatingsPlatform\obj\Debug\net9.0\MediaRatingsPlatform.sourcelink.json
+C:\Users\mfati\OneDrive - FH Technikum Wien\3. Semester\SWEN\MediaRatingsPlatform\bin\Debug\net9.0\BCrypt.Net-Next.dll

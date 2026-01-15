@@ -1,8 +1,8 @@
 using System;
-using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 using MediaRatingsPlatform.Controllers;
+using System.Text.RegularExpressions;
 
 namespace MediaRatingsPlatform.Http
 {
@@ -13,129 +13,106 @@ namespace MediaRatingsPlatform.Http
         private readonly RatingController _ratingController;
         private readonly FavoritesController _favoritesController;
 
-        public Router(UserController userController, MediaController mediaController,
-            RatingController ratingController, FavoritesController favoritesController)
+        public Router(UserController u, MediaController m, RatingController r, FavoritesController f)
         {
-            _userController = userController;
-            _mediaController = mediaController;
-            _ratingController = ratingController;
-            _favoritesController = favoritesController;
+            _userController = u;
+            _mediaController = m;
+            _ratingController = r;
+            _favoritesController = f;
         }
 
         public async Task HandleRequest(HttpListenerContext context)
         {
             var request = context.Request;
-            var response = context.Response;
-            var path = request.Url?.AbsolutePath?.ToLower();
+            var path = request.Url?.AbsolutePath?.ToLower().TrimEnd('/') ?? string.Empty;
             var method = request.HttpMethod;
-
-            Console.WriteLine($"{method} {path}");
 
             try
             {
-                // User Routes
+                // --- AUTH ---
                 if (path == "/api/users/register" && method == "POST")
                     await _userController.Register(context);
                 else if (path == "/api/users/login" && method == "POST")
                     await _userController.Login(context);
-                else if (path != null && path.StartsWith("/api/users/") && path.EndsWith("/profile") && method == "GET")
-                {
-                    var segments = path.Split('/');
-                    if (segments.Length >= 4)
-                    {
-                        var username = segments[3];
-                        await _userController.GetProfile(context, username);
-                    }
-                    else
-                    {
-                        response.StatusCode = 400;
-                        response.Close();
-                    }
-                }
-                else if (path == "/api/users/leaderboard" && method == "GET")
+
+                // --- LEADERBOARD ---
+                else if (path == "/api/leaderboard" && method == "GET")
                     await _userController.GetLeaderboard(context);
 
-                // Media Routes
+                // --- USER SPECIFIC ROUTES ---
+                // Regex for /api/users/{id}/...
+                else if (Regex.IsMatch(path, @"^/api/users/\d+/profile$") && method == "GET")
+                    await _userController.GetProfileById(context, GetIdFromPath(path, 3));
+
+                else if (Regex.IsMatch(path, @"^/api/users/\d+/profile$") && method == "PUT")
+                    await _userController.UpdateProfile(context, GetIdFromPath(path, 3));
+
+                else if (Regex.IsMatch(path, @"^/api/users/\d+/ratings$") && method == "GET")
+                    await _userController.GetUserRatingHistory(context, GetIdFromPath(path, 3));
+
+                else if (Regex.IsMatch(path, @"^/api/users/\d+/favorites$") && method == "GET")
+                    await _favoritesController.GetUserFavorites(context, GetIdFromPath(path, 3));
+
+                else if (Regex.IsMatch(path, @"^/api/users/\d+/recommendations$") && method == "GET")
+                    await _mediaController.GetRecommendations(context, GetIdFromPath(path, 3));
+
+                // --- MEDIA ROUTES ---
+                else if (path == "/api/media" && method == "GET")
+                    await _mediaController.GetMedia(context); // Search & Filter
                 else if (path == "/api/media" && method == "POST")
                     await _mediaController.CreateMedia(context);
-                else if (path == "/api/media" && method == "GET")
-                    await _mediaController.GetMedia(context);
-                else if (path != null && path.StartsWith("/api/media/") && method == "GET" && !path.Contains("/ratings") && !path.Contains("/favorite"))
-                    await _mediaController.GetMediaById(context, GetIdFromPath(path));
-                else if (path != null && path.StartsWith("/api/media/") && method == "PUT")
-                    await _mediaController.UpdateMedia(context, GetIdFromPath(path));
-                else if (path != null && path.StartsWith("/api/media/") && method == "DELETE" && !path.Contains("/ratings") && !path.Contains("/favorite"))
-                    await _mediaController.DeleteMedia(context, GetIdFromPath(path));
 
-                // Rating Routes
-                else if (path != null && path.Contains("/api/media/") && path.EndsWith("/ratings") && method == "GET")
-                    await _ratingController.GetRatingsForMedia(context, ExtractMediaIdFromRatingPath(path));
-                else if (path != null && path.Contains("/api/media/") && path.EndsWith("/ratings") && method == "POST")
-                    await _ratingController.CreateRating(context, ExtractMediaIdFromRatingPath(path));
-                else if (path != null && path.StartsWith("/api/ratings/") && method == "PUT")
-                    await _ratingController.UpdateRating(context, GetIdFromPath(path));
-                else if (path != null && path.StartsWith("/api/ratings/") && method == "DELETE")
-                    await _ratingController.DeleteRating(context, GetIdFromPath(path));
-                else if (path != null && path.StartsWith("/api/ratings/") && path.EndsWith("/like") && method == "POST")
-                    await _ratingController.LikeRating(context, ExtractRatingIdFromLikePath(path));
-                else if (path != null && path.StartsWith("/api/ratings/") && path.EndsWith("/like") && method == "DELETE")
-                    await _ratingController.UnlikeRating(context, ExtractRatingIdFromLikePath(path));
+                // /api/media/{id}
+                else if (Regex.IsMatch(path, @"^/api/media/\d+$") && method == "GET")
+                    await _mediaController.GetMediaById(context, GetIdFromPath(path, 3));
+                else if (Regex.IsMatch(path, @"^/api/media/\d+$") && method == "PUT")
+                    await _mediaController.UpdateMedia(context, GetIdFromPath(path, 3));
+                else if (Regex.IsMatch(path, @"^/api/media/\d+$") && method == "DELETE")
+                    await _mediaController.DeleteMedia(context, GetIdFromPath(path, 3));
 
-                // Favorites Routes
-                else if (path == "/api/favorites" && method == "GET")
-                    await _favoritesController.GetUserFavorites(context);
-                else if (path != null && path.StartsWith("/api/favorites/") && method == "POST")
-                    await _favoritesController.AddFavorite(context, GetIdFromPath(path));
-                else if (path != null && path.StartsWith("/api/favorites/") && method == "DELETE")
-                    await _favoritesController.RemoveFavorite(context, GetIdFromPath(path));
+                // --- MEDIA ACTIONS (Rate & Favorite) ---
+                // /api/media/{id}/rate
+                else if (Regex.IsMatch(path, @"^/api/media/\d+/rate$") && method == "POST")
+                    await _ratingController.CreateRating(context, GetIdFromPath(path, 3)); // ID is at index 3
+
+                // /api/media/{id}/favorite
+                else if (Regex.IsMatch(path, @"^/api/media/\d+/favorite$") && method == "POST")
+                    await _favoritesController.AddFavorite(context, GetIdFromPath(path, 3));
+                else if (Regex.IsMatch(path, @"^/api/media/\d+/favorite$") && method == "DELETE")
+                    await _favoritesController.RemoveFavorite(context, GetIdFromPath(path, 3));
+
+                // --- RATING MANAGEMENT ---
+                // /api/ratings/{id}
+                else if (Regex.IsMatch(path, @"^/api/ratings/\d+$") && method == "PUT")
+                    await _ratingController.UpdateRating(context, GetIdFromPath(path, 3));
+
+                // /api/ratings/{id}/like
+                else if (Regex.IsMatch(path, @"^/api/ratings/\d+/like$") && method == "POST")
+                    await _ratingController.LikeRating(context, GetIdFromPath(path, 3));
+
+                // /api/ratings/{id}/confirm (Postman uses POST here)
+                else if (Regex.IsMatch(path, @"^/api/ratings/\d+/confirm$") && method == "POST")
+                    await _ratingController.ConfirmRating(context, GetIdFromPath(path, 3));
 
                 else
                 {
-                    response.StatusCode = 404;
-                    response.Close();
+                    context.Response.StatusCode = 404;
+                    context.Response.Close();
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                response.StatusCode = 500;
-                using var writer = new StreamWriter(response.OutputStream);
-                writer.Write(ex.Message);
+                context.Response.StatusCode = 500;
+                context.Response.Close();
             }
         }
 
-        private int GetIdFromPath(string path)
+        private int GetIdFromPath(string path, int index)
         {
             var segments = path.Split('/');
-            if (int.TryParse(segments[^1], out int id)) return id;
-            return 0;
-        }
-
-        private int ExtractMediaIdFromRatingPath(string path)
-        {
-            // Path: /api/media/{id}/ratings
-            var segments = path.Split('/');
-            for (int i = 0; i < segments.Length; i++)
-            {
-                if (segments[i] == "media" && i + 1 < segments.Length)
-                {
-                    if (int.TryParse(segments[i + 1], out int id)) return id;
-                }
-            }
-            return 0;
-        }
-
-        private int ExtractRatingIdFromLikePath(string path)
-        {
-            // Path: /api/ratings/{id}/like
-            var segments = path.Split('/');
-            for (int i = 0; i < segments.Length; i++)
-            {
-                if (segments[i] == "ratings" && i + 1 < segments.Length)
-                {
-                    if (int.TryParse(segments[i + 1], out int id)) return id;
-                }
-            }
+            if (segments.Length > index && int.TryParse(segments[index], out int id))
+                return id;
             return 0;
         }
     }

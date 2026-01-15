@@ -9,11 +9,18 @@ namespace MediaRatingsPlatform
     {
         static void Main(string[] args)
         {
+            // Check if we started with "test" argument
+            if (args.Length > 0 && args[0] == "test")
+            {
+                // Run the manual test runner
+                Tests.RunAllTests();
+                return; // Exit after tests
+            }
             Console.WriteLine("Starting MRP Server...");
 
             // 1. Setup DB
             // Change these credentials to match your local PostgreSQL setup
-            string connString = "Host=localhost;Username=postgres;Password=1234;Database=MediaRatingsPlatform";
+            string connString = "Host=localhost;Username=postgres;Password=admin;Database=MediaRatingsPlatform";
             var db = new Database(connString);
 
             try
@@ -34,8 +41,8 @@ namespace MediaRatingsPlatform
 
             var userController = new UserController(userRepo);
             var mediaController = new MediaController(userRepo, mediaRepo);
-            var ratingController = new RatingController(userRepo, ratingRepo, mediaRepo, favRepo);
-            var favoritesController = new FavoritesController(userRepo, favRepo, mediaRepo);
+            var ratingController = new RatingController(userRepo, ratingRepo);
+            var favoritesController = new FavoritesController(userRepo, favRepo);
 
             // 3. Setup Router & Server
             var router = new Router(userController, mediaController, ratingController, favoritesController);
